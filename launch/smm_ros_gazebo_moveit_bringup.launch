@@ -1,0 +1,51 @@
+<?xml version="1.0"?>
+<launch>
+	<!-- startup simulated world -->
+	  <arg name="paused" default="false"/>
+	  <arg name="gazebo_gui" default="true"/>
+	  <arg name="initial_joint_positions" doc="Initial joint configuration of the robot"
+		  default=" -J active_module_a_1__active_module_b_1 0 -J active_module_a_2__active_module_b_2 0 -J base_plate__base_link 0"/>
+       
+	<include file="$(find gazebo_ros)/launch/empty_world.launch">
+		<arg name="world_name" default="worlds/empty.world"/>
+		<arg name="paused" value="true"/>
+		<arg name="gui" value="$(arg gazebo_gui)"/>
+	</include>
+
+     <!-- send robot urdf to param server -->
+	<param name="robot_description" textfile="$(find smm_ros_gazebo_pkg)/urdf/smm_ros_gazebo_final.urdf" />
+
+	  <!-- unpause only after loading robot model -->
+	<arg name="unpause" value="$(eval '' if arg('paused') else '-unpause')" />
+	  <!-- push robot_description to factory and spawn robot in gazebo at the origin, change x,y,z arguments to spawn in a different position -->
+	<arg name="world_pose" value="-x 0 -y 0 -z 0" />
+	  
+	 <node name="spawn_gazebo_model" pkg="gazebo_ros" type="spawn_model" args="-urdf -param robot_description -model robot $(arg unpause) $(arg world_pose) $(arg initial_joint_positions)"    respawn="false" output="screen" />
+	<!-- Load the robot controllers-->
+	<rosparam file="$(find smm_ros_gazebo_moveit_pkg)/config/gazebo_controllers_gazebo_integration.yaml" command="load"/>
+	<!-- Load robot's joint states-->
+	<rosparam file="$(find smm_ros_gazebo_moveit_pkg)/config/smm_ros_gazebo_moveit_joint_states.yaml" command="load"/>	
+	<!-- Controller manager spawner-->
+	<node name="smm_ros_gazebo_joint_state_spawner" pkg="controller_manager" type="spawner" respawn="false"
+	output="screen" ns="/smm_ros_gazebo" args="joint_state_controller smm_ros_gazebo_moveit_trajectory_controller"/>
+	<!-- Check ok-->
+	<node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" respawn="false" output="screen">
+		<!--remap from="/joint_states" to="/smm_ros_gazebo/joint_states" /-->
+	</node>
+	<!-- Check ok-->
+	<node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher">
+		<!--remap from="joint_states" to="/smm_ros_gazebo/joint_states" /-->
+	</node>	
+	<!-- Check ok-->
+	<include file="$(find smm_ros_gazebo_moveit_pkg)/launch/planning_context.launch">
+		<arg name="load_robot_description" value="false" />
+	</include>	
+	<!-- Check ok-->
+	<include file="$(find smm_ros_gazebo_moveit_pkg)/launch/move_group.launch">
+		<arg name="publish_monitored_planning_scene" value="true" />
+	</include>
+	<!-- Check ok-->
+	<include file="$(find smm_ros_gazebo_moveit_pkg)/launch/moveit_rviz.launch">
+		<arg name="rviz_config" value="$(find smm_ros_gazebo_moveit_pkg)/launch/moveit.rviz"/>
+	</include>
+</launch>

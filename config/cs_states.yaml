@@ -1,0 +1,18 @@
+tot_cs_states: 3
+
+#State0
+joint1_0: 0.532
+joint2_0: -0.250
+joint3_0: 0.600
+#State1
+joint1_1: -0.225
+joint2_1: 0.7854
+joint3_1: -0.124
+#State2
+joint1_2: 0.7854
+joint2_2: -0.150
+joint3_2: 1.5708
+#State3
+joint1_3: -0.455
+joint2_3: -0.950
+joint3_3: -1.023

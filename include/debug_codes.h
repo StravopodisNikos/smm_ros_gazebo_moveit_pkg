@@ -1,0 +1,2 @@
+#define NO_ERROR 0
+#define VIOLATED_MAX_TRAJ_POINTS 1

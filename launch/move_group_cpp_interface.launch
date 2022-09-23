@@ -1,0 +1,6 @@
+<launch>
+
+  <node name="move_group_cpp_interface" pkg="smm_ros_gazebo_moveit_pkg" type="move_group_cpp_interface" respawn="false" output="screen">
+  </node>
+
+</launch>

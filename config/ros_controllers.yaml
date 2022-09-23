@@ -1,0 +1,30 @@
+joint1_ctr:
+  type: position_controllers/JointTrajectoryController
+  joints:
+    - base_plate__base_link
+  gains:
+    base_plate__base_link:
+      p: 200
+      d: 50
+      i: 10
+      i_clamp: 1
+joint2_ctr:
+  type: effort_controllers/JointTrajectoryController
+  joints:
+    - active_module_a_1__active_module_b_1
+  gains:
+    base_plate__base_link:
+      p: 200
+      d: 50
+      i: 10
+      i_clamp: 1
+joint3_ctr:
+  type: effort_controllers/JointTrajectoryController
+  joints:
+    - active_module_a_2__active_module_b_2
+  gains:
+    base_plate__base_link:
+      p: 200
+      d: 50
+      i: 10
+      i_clamp: 1

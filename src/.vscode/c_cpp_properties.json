@@ -1,0 +1,26 @@
+{
+    "configurations": [
+        {
+            "browse": {
+                "databaseFilename": "${default}",
+                "limitSymbolsToIncludedHeaders": false
+            },
+            "includePath": [
+                "/home/nikos/catkin_ws/devel/include/**",
+                "/opt/ros/noetic/include/**",
+                "/home/nikos/catkin_ws/src/mastering_ros_demo_pkg/include/**",
+                "/home/nikos/catkin_ws/src/mastering_ros_robot_description_pkg/include/**",
+                "/home/nikos/catkin_ws/src/smm_ros_gazebo_pkg/include/**",
+                "/usr/include/**",
+                "/home/nikos/catkin_ws/src/smm_ros_gazebo_moveit_pkg/include",
+                "/opt/ros/noetic/include"
+            ],
+            "name": "ROS",
+            "intelliSenseMode": "gcc-x64",
+            "compilerPath": "/usr/bin/gcc",
+            "cStandard": "gnu11",
+            "cppStandard": "c++14"
+        }
+    ],
+    "version": 4
+}

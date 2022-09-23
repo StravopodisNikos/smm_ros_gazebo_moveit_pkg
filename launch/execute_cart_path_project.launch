@@ -1,0 +1,21 @@
+<?xml version="1.0" ?>
+
+<launch>
+	<!-- include the launch file that opens Rviz + Gazebo -->
+	<include file="$(find smm_ros_gazebo_moveit_pkg)/launch/smm_ros_gazebo_moveit_bringup.launch"/>
+	
+	<!-- Load path waypoints to the parameter server-->
+	<group ns="path_waypoints">
+     	<rosparam file="$(find smm_ros_gazebo_moveit_pkg)/config/path_waypoints.yaml" />
+     </group>
+     
+	<group ns="cs_states">
+     	<rosparam file="$(find smm_ros_gazebo_moveit_pkg)/config/cs_states.yaml" />
+     </group>  
+     
+	<group ns="plan_sequence">
+     	<rosparam file="$(find smm_ros_gazebo_moveit_pkg)/config/sequence_plan_properties.yaml" />
+     </group>     
+     <!-- Start the planning task node: Here path is planned && executed-->
+  	<!--node name="planning_task_space" type="planning_task_space" pkg="smm_ros_gazebo_moveit_pkg" /-->
+</launch>

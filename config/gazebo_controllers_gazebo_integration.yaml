@@ -1,0 +1,16 @@
+smm_ros_gazebo: 
+  smm_ros_gazebo_moveit_trajectory_controller:
+    type: position_controllers/JointTrajectoryController
+    joints:
+      - base_plate__base_link
+      - active_module_a_1__active_module_b_1
+      - active_module_a_2__active_module_b_2
+    constraints:
+        goal_time: 0.6
+        stopped_velocity_tolerance: 0.05
+        base_plate__base_link: {trajectory: 0.1, goal: 0.1}
+        active_module_a_1__active_module_b_1: {trajectory: 0.1, goal: 0.1}
+        active_module_a_2__active_module_b_2: {trajectory: 0.1, goal: 0.1}   
+    stop_trajectory_duration: 0.5
+    state_publish_rate:  25
+    action_monitor_rate: 10

@@ -1,0 +1,9 @@
+controller_list:
+  - name: smm_ros_gazebo/smm_ros_gazebo_moveit_trajectory_controller
+    action_ns: follow_joint_trajectory
+    type: FollowJointTrajectory
+    default: True
+    joints:
+      - base_plate__base_link
+      - active_module_a_1__active_module_b_1
+      - active_module_a_2__active_module_b_2

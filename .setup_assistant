@@ -1,0 +1,11 @@
+moveit_setup_assistant_config:
+  URDF:
+    package: smm_ros_gazebo_pkg
+    relative_path: urdf/smm_ros_gazebo.urdf
+    xacro_args: ""
+  SRDF:
+    relative_path: config/smm_ros_gazebo.srdf
+  CONFIG:
+    author_name: Stravopodis Nikos
+    author_email: n.stravopodis@syros.aegean.gr
+    generated_timestamp: 1662599717

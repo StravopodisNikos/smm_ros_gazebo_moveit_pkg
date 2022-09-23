@@ -1,0 +1,18 @@
+# User specified waypoints cartesian coords
+tot_path_waypoints: 2
+
+point0_x: 0.532
+point0_y: -0.250
+point0_z: 0.600
+
+point1_x: 0.532
+point1_y: -0.150
+point1_z: 0.600
+
+point2_x: 0.432
+point2_y: -0.150
+point2_z: 0.600
+
+point3_x: 0.432
+point3_y: -0.250
+point3_z: 0.600

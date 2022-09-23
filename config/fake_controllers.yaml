@@ -1,0 +1,10 @@
+controller_list:
+  - name: fake_smm_arm_controller
+    type: $(arg fake_execution_type)
+    joints:
+      - base_plate__base_link
+      - active_module_a_1__active_module_b_1
+      - active_module_a_2__active_module_b_2
+initial:  # Define initial robot poses per group
+  - group: smm_arm
+    pose: home

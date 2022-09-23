@@ -1,0 +1,5 @@
+# Parameters for motion plan sequence
+blend_radius1: 0.01
+blend_radius2: 0.005
+max_allowed_planning_time: 5.0
+max_planning_attempts: 2
