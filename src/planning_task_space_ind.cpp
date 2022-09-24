@@ -1,5 +1,7 @@
 // Main ROS Library
 #include <ros/ros.h>
+// ActionLib Libraries
+
 // MoveIt Libraries
 #include <moveit/robot_model_loader/robot_model_loader.h>
 #include <moveit/robot_model/robot_model.h>
@@ -29,6 +31,9 @@
  */
 debug_error my_path_debug_code;
 
+const std::string MOVE_GR_ACT_NAME("/move_group");
+const std::string SEQ_MOVE_GR_ACT_NAME("/sequence_move_group");
+
 int main(int argc, char **argv)
 {
     ros::init(argc, argv, "planning_task_space");
@@ -50,6 +55,8 @@ int main(int argc, char **argv)
 
     // Enabling the Pilz Industrial Motion Planner
     // same as group("smm_arm")
+    // Action Client
+    actionlib::SimpleActionClient<moveit_msgs::MoveGroupAction> mot_seq_acli(node_handle,SEQ_MOVE_GR_ACT_NAME);
 
     // Get Robot Model for accessing kinematic data
     robot_model_loader::RobotModelLoader robot_model_loader(path2execute.p_robot_description);
@@ -57,7 +64,10 @@ int main(int argc, char **argv)
 
     // Access Joints' data
     moveit::core::RobotStatePtr kinematic_state(new moveit::core::RobotState(kinematic_model));
-    const moveit::core::JointModelGroup* joint_model_group = kinematic_model->getJointModelGroup("smm_arm");
+    //const moveit::core::JointModelGroup* joint_model_group = kinematic_model->getJointModelGroup("smm_arm");
+    path2execute.p_joint_model_group = kinematic_model->getJointModelGroup("smm_arm");
+    //const moveit::core::JointModelGroup* joint_model_group2 = kinematic_state->getJointModelGroup("smm_arm"); //same thing
+    
 
     // Setup a PlanningPipeline object. Uses the Parameter Server to determine request adapters and the plugins
     planning_pipeline::PlanningPipelinePtr planning_pipeline(
@@ -88,29 +98,46 @@ int main(int argc, char **argv)
     // Assign the joint positions of the first state to the group
     // (Example) kinematic_state->setJointGroupPositions(joint_model_group, *(path2execute.ptr2joints + 0));
 	
-    // II. Create a motion plan request
-    //planning_interface::
-    path2execute.fillMotionSequenceItem(node_handle, kinematic_state, joint_model_group, path2execute.seq, &my_path_debug_code);
+    // II. Create a motion plan sequence(!) request
+    //moveit_msgs::MotionSequenceRequest seq0;
+    moveit_msgs::MotionPlanRequestPtr seq0;
+    path2execute.seq_cnt = 0;
+    path2execute.fillMotionPlanRequestMsg(node_handle, kinematic_state, seq0 ,path2execute.seq_cnt,&my_path_debug_code);
 
+    // III. Calling for action
+    ROS_INFO("Calling the action server... ");
+    mot_seq_acli.sendGoal(seq0);
+
+    bool finished_before_timeout = mot_seq_acli.waitForResult(ros::Duration(5.0));
+
+    if (finished_before_timeout)
+    {
+        actionlib::SimpleClientGoalState state = mot_seq_acli.getState();
+        ROS_INFO("Action finished: %s", state.toString().c_str());
+    }
+    else
+    {
+        ROS_INFO("Action did not finish before the time out.");
+    }
 
     // Compute the task path
-    ROS_INFO("Computing the cartesian task path... ");
+    //ROS_INFO("Computing the cartesian task path... ");
     //group.setPoseReferenceFrame("base_plate");
     //path2execute.p_cart_path = group.computeCartesianPath(path2execute.p_path_waypoints, path2execute.p_eef_step, path2execute.p_jump_threshold, path2execute.p_traj_cart_path,false, path2execute.error_code_returned);
-    sleep(2.0);
+    //sleep(2.0);
 
     // Print the extracted trajectory
-    ROS_INFO("Printing the cartesian task path... ");
+    //ROS_INFO("Printing the cartesian task path... ");
     //path2execute.printComputedTrajectory(path2execute.p_traj_cart_path);
 
     // Visualize the plan in RViz
 
     /// Plan & Execute p2p motion
-    ROS_INFO("Planning the cartesian task path... ");
-    moveit::planning_interface::MoveGroupInterface::Plan my_plan;
+    //ROS_INFO("Planning the cartesian task path... ");
+    //moveit::planning_interface::MoveGroupInterface::Plan my_plan;
     //moveit::core::MoveItErrorCode success = group.plan(my_plan); 
-    sleep(2.0); // Sleep to give Rviz time to visualize the plan
-    ROS_INFO("Executing the cartesian task path... ");
+    //sleep(2.0); // Sleep to give Rviz time to visualize the plan
+    //ROS_INFO("Executing the cartesian task path... ");
     //group.execute(my_plan);	
     sleep(2.0);
 

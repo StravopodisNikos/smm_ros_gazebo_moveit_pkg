@@ -20,6 +20,8 @@ find_package(catkin REQUIRED
     tf2_eigen
     tf2_geometry_msgs
     roslaunch
+    actionlib
+    actionlib_msgs
 )
 find_package(Eigen3 REQUIRED)
 find_package(Boost REQUIRED system filesystem date_time thread)
@@ -34,6 +36,8 @@ catkin_package(
     moveit_ros_planning_interface
     interactive_markers
     tf2_geometry_msgs
+    actionlib
+    actionlib_msgs
   DEPENDS
     EIGEN3
 )

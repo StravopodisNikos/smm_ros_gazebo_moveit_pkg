@@ -3,6 +3,12 @@
 #include <iostream>
 #include <string> 
 
+
+const std::string PIPELINE_ID("pilz_industrial_motion_planner");
+//const std::string PLANNER_ID("PTP");
+//const std::string GROUP_NAME("panda_arm");
+//const std::string LINK_NAME("panda_hand");
+
 path_properties::path_properties(ros::NodeHandle node_handle)
 {
     node_handle.getParam("/path_waypoints/tot_path_waypoints", _tot_waypoints);
@@ -19,6 +25,7 @@ path_properties::path_properties(ros::NodeHandle node_handle)
     _par_tmp = 0;
 
     p_s_group_name = "smm_arm";
+    p_s_end_effector_name = "massage_tool_2";
     p_robot_description = "robot_description";
 }
 
@@ -159,8 +166,53 @@ void path_properties::fillMotionSequenceItem(ros::NodeHandle node_handle, moveit
 
     //kin_state->setJointGroupPositions(mod_group, *(ptr2joints+0) );
     kin_state->setJointGroupPositions(mod_group, *(ptr2joints+0) );
-    moveit_msgs::Constraints joint_goal_cons = kinematic_constraints::constructGoalConstraints(*kin_state, mod_group);
+    moveit_msgs::Constraints joint_goal_cons = kinematic_constraints::constructGoalConstraints(*kin_state, mod_group, 0.002, 0.002);
 
     // View the derived joint constraints, only for evaluation
+    return;
+}
+
+void path_properties::fillMotionPlanRequestMsg(ros::NodeHandle node_handle, moveit::core::RobotStatePtr& kin_state, moveit_msgs::MotionPlanRequestPtr ptr2_mot_pl_req, char path_state_cnt, debug_error * custom_error_code )
+{
+    /*
+     *
+     */
+
+    ptr2_mot_pl_req->allowed_planning_time = 2.0;
+    ptr2_mot_pl_req->cartesian_speed_end_effector_link = p_s_end_effector_name;
+    ptr2_mot_pl_req->group_name = p_s_group_name;
+    ptr2_mot_pl_req->planner_id = "PTP";
+    ptr2_mot_pl_req->pipeline_id = PIPELINE_ID;
+    ptr2_mot_pl_req->num_planning_attempts = 2;
+    //ptr2_mot_pl_req->workspace_parameters // intentionally avoided
+
+    if (path_state_cnt == 0)
+    {
+        moveit::core::robotStateToRobotStateMsg(*kin_state, ptr2_mot_pl_req->start_state );
+    }
+    else
+    {
+        moveit::core::robotStateToRobotStateMsg(*p_cur_state, ptr2_mot_pl_req->start_state );
+    }
+
+    // Set the goal_constraints
+    moveit::core::RobotState goal_state(*kin_state);
+    goal_state.setJointGroupPositions(p_joint_model_group, *(ptr2joints+path_state_cnt));
+    moveit_msgs::Constraints joint_goal_cons = kinematic_constraints::constructGoalConstraints(*kin_state, p_joint_model_group, 0.002, 0.002);
+    ptr2_mot_pl_req->goal_constraints.clear();
+    ptr2_mot_pl_req->goal_constraints.push_back(joint_goal_cons);
+
+    // Set the path_constraints
+    // ...
+    // Set the trajectory_constraints
+    // ...
+
+    ptr2_mot_pl_req->max_velocity_scaling_factor = 0.5;
+    ptr2_mot_pl_req->max_acceleration_scaling_factor = 0.9;
+    ptr2_mot_pl_req->max_cartesian_speed = 1.1;
+    
+    // Finally set the current state to the goal state(assume successful plan+execute)
+    p_cur_state = &goal_state;
+    
     return;
 }
