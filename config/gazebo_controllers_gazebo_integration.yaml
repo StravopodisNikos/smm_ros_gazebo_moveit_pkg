@@ -6,11 +6,11 @@ smm_ros_gazebo:
       - active_module_a_1__active_module_b_1
       - active_module_a_2__active_module_b_2
     constraints:
-        goal_time: 0.6
+        goal_time: 2.0
         stopped_velocity_tolerance: 0.05
-        base_plate__base_link: {trajectory: 0.1, goal: 0.1}
-        active_module_a_1__active_module_b_1: {trajectory: 0.1, goal: 0.1}
-        active_module_a_2__active_module_b_2: {trajectory: 0.1, goal: 0.1}   
+        base_plate__base_link: {trajectory: 0.2, goal: 0.2}
+        active_module_a_1__active_module_b_1: {trajectory: 0.2, goal: 0.2}
+        active_module_a_2__active_module_b_2: {trajectory: 0.2, goal: 0.2}   
     stop_trajectory_duration: 0.5
     state_publish_rate:  25
     action_monitor_rate: 10

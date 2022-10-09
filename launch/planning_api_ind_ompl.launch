@@ -1,0 +1,9 @@
+<launch>
+
+  <node name="planning_task_space_ind" pkg="smm_ros_gazebo_moveit_pkg" type="planning_task_space_ind" respawn="false" output="screen">
+    <rosparam command="load" file="$(find smm_ros_gazebo_moveit_pkg)/config/kinematics.yaml"/>
+    <param name="/planning_plugin" value="ompl_interface/OMPLPlanner"/>
+    <rosparam command="load" file="$(find smm_ros_gazebo_moveit_pkg)/config/ompl_planning.yaml"/>
+  </node>
+
+</launch>

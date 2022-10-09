@@ -2,12 +2,12 @@ smm_ros_gazebo:
  joint1_ctr: 
   type: position_controllers/JointPositionController 
   joint: base_plate__base_link 
-  pid: {p: 100.0, i: 0.01, d: 10.0} 
+  pid: {p: 200.0, i: 10.01, d: 50.0} 
  joint2_ctr: 
   type: position_controllers/JointPositionController
   joint: active_module_a_1__active_module_b_1 
-  pid: {p: 100.0, i: 0.01, d: 10.0} 
+  pid: {p: 200.0, i: 10.01, d: 50.0} 
  joint3_ctr: 
   type: position_controllers/JointPositionController 
   joint: active_module_a_2__active_module_b_2 
-  pid: {p: 100.0, i: 0.01, d: 10.0} 
+  pid: {p: 200.0, i: 10.01, d: 50.0} 

@@ -2,8 +2,12 @@
 
   <!-- The request adapters (plugins) used when planning. ORDER MATTERS! -->
   <arg name="planning_adapters" default="" />
-
-  <param name="planning_plugin" value="pilz_industrial_motion_planner::CommandPlanner" />
+  
+  <!-- [25/9/22] Next 2 lines added for using the Pilz INdustrial planner-->
+  <arg name="planning_plugin" value="pilz_industrial_motion_planner::CommandPlanner" /> 
+  <!--arg name="planning_plugin" value="pilz::CommandPlanner" /> -->
+  <param name="planning_plugin" value="$(arg planning_plugin)" />
+  
   <param name="request_adapters" value="$(arg planning_adapters)" />
 
   <!-- Define default planner (for all groups) -->

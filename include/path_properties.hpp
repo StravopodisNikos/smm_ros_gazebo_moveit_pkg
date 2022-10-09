@@ -19,7 +19,8 @@
 #include <moveit/robot_model/robot_model.h>
 #include <moveit/kinematic_constraints/kinematic_constraint.h>
 #include <moveit/kinematic_constraints/utils.h>
-
+#include <moveit/planning_scene_interface/planning_scene_interface.h>
+#include <moveit/move_group_interface/move_group_interface.h>
 #include <moveit_msgs/Constraints.h>
 #include <moveit_msgs/JointConstraint.h>
 #include <moveit_msgs/MoveGroupAction.h>
@@ -62,6 +63,10 @@ public:
     path_properties(ros::NodeHandle node_handle);
     ~path_properties();
 
+    bool return_fn_state;
+
+    std::vector<double> goal_joint_values;
+
     // The robot joint group defined in moveit configuration package manager
     std::string p_s_group_name;
     std::string p_robot_description;
@@ -79,6 +84,9 @@ public:
     //const double *ptr2cs_states_traj[]; // declaration of an array of pointers of type const double
     moveit_msgs::MotionSequenceItemPtr seq;
     moveit::core::RobotState * p_cur_state;
+    moveit::core::RobotStatePtr p_cur_state_ptr;
+
+    moveit::planning_interface::MoveGroupInterface *ptr2group;
 
     char seq_cnt;
     
@@ -89,7 +97,10 @@ public:
 
     // Methods for generating ROS msgs used for trajectory implementation
     void fillMotionSequenceItem(ros::NodeHandle node_handle, moveit::core::RobotStatePtr& kin_state, const moveit::core::JointModelGroup* mod_group, moveit_msgs::MotionSequenceItemPtr& motion_seq_item, debug_error * custom_error_code );
-    void fillMotionPlanRequestMsg(ros::NodeHandle node_handle, moveit::core::RobotStatePtr& kin_state, moveit_msgs::MotionPlanRequestPtr ptr2_mot_pl_req, char path_state_cnt, debug_error * custom_error_code );
+    void fillMotionPlanRequestMsg(ros::NodeHandle node_handle, moveit::core::RobotStatePtr& kin_state, moveit_msgs::MotionPlanRequest mot_pl_req, char path_state_cnt, debug_error * custom_error_code );
+
+    void executeJointSpaceSegment(ros::NodeHandle node_handle, int path_state_cnt, debug_error * custom_error_code );
+
 };
 
 

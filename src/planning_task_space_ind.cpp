@@ -36,7 +36,7 @@ const std::string SEQ_MOVE_GR_ACT_NAME("/sequence_move_group");
 
 int main(int argc, char **argv)
 {
-    ros::init(argc, argv, "planning_task_space");
+    ros::init(argc, argv, "planning_task_space_ind");
     ros::NodeHandle node_handle;  
     ros::AsyncSpinner spinner(1);
     path_properties path2execute(node_handle);
@@ -56,7 +56,7 @@ int main(int argc, char **argv)
     // Enabling the Pilz Industrial Motion Planner
     // same as group("smm_arm")
     // Action Client
-    actionlib::SimpleActionClient<moveit_msgs::MoveGroupAction> mot_seq_acli(node_handle,SEQ_MOVE_GR_ACT_NAME);
+    //actionlib::SimpleActionClient<moveit_msgs::MoveGroupAction> mot_seq_acli(node_handle,SEQ_MOVE_GR_ACT_NAME);
 
     // Get Robot Model for accessing kinematic data
     robot_model_loader::RobotModelLoader robot_model_loader(path2execute.p_robot_description);
@@ -65,15 +65,56 @@ int main(int argc, char **argv)
     // Access Joints' data
     moveit::core::RobotStatePtr kinematic_state(new moveit::core::RobotState(kinematic_model));
     //const moveit::core::JointModelGroup* joint_model_group = kinematic_model->getJointModelGroup("smm_arm");
-    path2execute.p_joint_model_group = kinematic_model->getJointModelGroup("smm_arm");
-    //const moveit::core::JointModelGroup* joint_model_group2 = kinematic_state->getJointModelGroup("smm_arm"); //same thing
+    path2execute.p_joint_model_group = kinematic_model->getJointModelGroup(path2execute.p_s_group_name);
+    const moveit::core::JointModelGroup* joint_model_group = kinematic_state->getJointModelGroup(path2execute.p_s_group_name); //same thing
     
+
+    // Using the RobotModel, we construct a PlanningScene that maintains the state of the world (including the robot).
+    planning_scene::PlanningScenePtr planning_scene(new planning_scene::PlanningScene(kinematic_model));
 
     // Setup a PlanningPipeline object. Uses the Parameter Server to determine request adapters and the plugins
     planning_pipeline::PlanningPipelinePtr planning_pipeline(
         new planning_pipeline::PlanningPipeline(kinematic_model, node_handle, "planning_plugin", "request_adapters")
     );
 
+    // Configure a valid robot state
+    planning_scene->getCurrentStateNonConst().setToDefaultValues(joint_model_group, "ready");
+
+    // Construct a loader to load a planner, by name.( Using the ROS pluginlib library)
+    boost::scoped_ptr<pluginlib::ClassLoader<planning_interface::PlannerManager>> planner_plugin_loader;
+    planning_interface::PlannerManagerPtr planner_instance;
+    std::string planner_plugin_name;
+
+    // We will get the name of planning plugin we want to load
+    // from the ROS parameter server, and then load the planner
+    // making sure to catch all exceptions.
+    if (!node_handle.getParam("/planning_task_space_ind/planning_plugin", planner_plugin_name))
+        ROS_FATAL_STREAM("Could not find planner plugin name");
+    try
+    {
+        planner_plugin_loader.reset(new pluginlib::ClassLoader<planning_interface::PlannerManager>(
+            "moveit_core", "planning_interface::PlannerManager"));
+    }
+    catch (pluginlib::PluginlibException& ex)
+    {
+        ROS_FATAL_STREAM("Exception while creating planning plugin loader " << ex.what());
+    }
+    try
+    {
+        planner_instance.reset(planner_plugin_loader->createUnmanagedInstance(planner_plugin_name));
+        if (!planner_instance->initialize(kinematic_model, node_handle.getNamespace()))
+        ROS_FATAL_STREAM("Could not initialize planner instance");
+        ROS_INFO_STREAM("Using planning interface '" << planner_instance->getDescription() << "'");
+    }
+    catch (pluginlib::PluginlibException& ex)
+    {
+        const std::vector<std::string>& classes = planner_plugin_loader->getDeclaredClasses();
+        std::stringstream ss;
+        for (const auto& cls : classes)
+        ss << cls << " ";
+        ROS_ERROR_STREAM("Exception while loading planner '" << planner_plugin_name << "': " << ex.what() << std::endl
+                                                            << "Available plugins: " << ss.str());
+    }
 
     // (Optional) Set Planning properties
     //group.setPlanningTime(5.0);
@@ -91,34 +132,66 @@ int main(int argc, char **argv)
 
     // I. Get path waypoints from Parameter Server
     ROS_INFO("Extracting path waypoints from Parameter Server... ");
-    //path2execute.getPathWaypoints(node_handle);
+    path2execute.getPathWaypoints(node_handle, &my_path_debug_code);
     path2execute.getConfigSpaceStates(node_handle, &my_path_debug_code);
 
 	//const double cs02 =  *(*(path2execute.ptr2joints + 0) + 2);
     // Assign the joint positions of the first state to the group
     // (Example) kinematic_state->setJointGroupPositions(joint_model_group, *(path2execute.ptr2joints + 0));
 	
-    // II. Create a motion plan sequence(!) request
+    // II.i Create a motion plan sequence(!) request
     //moveit_msgs::MotionSequenceRequest seq0;
-    moveit_msgs::MotionPlanRequestPtr seq0;
+    moveit_msgs::MotionPlanRequest seq0;
+    planning_interface::MotionPlanResponse res0;
     path2execute.seq_cnt = 0;
     path2execute.fillMotionPlanRequestMsg(node_handle, kinematic_state, seq0 ,path2execute.seq_cnt,&my_path_debug_code);
 
+    // II.ii Construct a planning context
+    planning_interface::PlanningContextPtr context = planner_instance->getPlanningContext(planning_scene, seq0, res0.error_code_);
+    context->solve(res0);
+    if (res0.error_code_.val != res0.error_code_.SUCCESS)
+    {
+        ROS_ERROR("Could not compute plan successfully");
+        my_path_debug_code = PLANNING_FAILED;
+    }
+
+    // II.iii Visualize the result
+    ros::Publisher display_publisher = node_handle.advertise<moveit_msgs::DisplayTrajectory>("/move_group/display_planned_path", 1, true);
+    moveit_msgs::DisplayTrajectory display_trajectory;
+
+    moveit_msgs::MotionPlanResponse response;
+    res0.getMessage(response);
+    display_trajectory.trajectory_start = response.trajectory_start;
+    display_trajectory.trajectory.push_back(response.trajectory);
+    visual_tools.publishTrajectoryLine(display_trajectory.trajectory.back(), joint_model_group);
+    visual_tools.trigger();
+    display_publisher.publish(display_trajectory);
+
+    // II.iv Change the current state to the previous goal state
+    kinematic_state->setJointGroupPositions(joint_model_group, response.trajectory.joint_trajectory.points.back().positions);
+    planning_scene->setCurrentState(*kinematic_state.get());
+
+    // II.v Display the goal state
+    visual_tools.publishRobotState(planning_scene->getCurrentStateNonConst(), rviz_visual_tools::GREEN);
+    visual_tools.trigger();
+
     // III. Calling for action
+    /*
     ROS_INFO("Calling the action server... ");
-    mot_seq_acli.sendGoal(seq0);
+    //mot_seq_acli.sendGoal(seq0);
 
-    bool finished_before_timeout = mot_seq_acli.waitForResult(ros::Duration(5.0));
-
+    //bool finished_before_timeout = mot_seq_acli.waitForResult(ros::Duration(5.0));
+    bool finished_before_timeout = true;
     if (finished_before_timeout)
     {
-        actionlib::SimpleClientGoalState state = mot_seq_acli.getState();
-        ROS_INFO("Action finished: %s", state.toString().c_str());
+        //actionlib::SimpleClientGoalState state = mot_seq_acli.getState();
+        //ROS_INFO("Action finished: %s", state.toString().c_str());
     }
     else
     {
         ROS_INFO("Action did not finish before the time out.");
     }
+    */
 
     // Compute the task path
     //ROS_INFO("Computing the cartesian task path... ");
@@ -140,6 +213,7 @@ int main(int argc, char **argv)
     //ROS_INFO("Executing the cartesian task path... ");
     //group.execute(my_plan);	
     sleep(2.0);
+    planner_instance.reset();
 
     // Terminate ROS node
     ros::shutdown();  

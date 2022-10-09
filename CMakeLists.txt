@@ -81,5 +81,8 @@ target_link_libraries(planning_task_space path_properties ${catkin_LIBRARIES} ${
 add_executable(planning_task_space_ind src/planning_task_space_ind.cpp)
 target_link_libraries(planning_task_space_ind path_properties ${catkin_LIBRARIES} ${Boost_LIBRARIES})
 
+add_executable(planning_joint_space_sequence src/planning_joint_space_sequence.cpp)
+target_link_libraries(planning_joint_space_sequence path_properties ${catkin_LIBRARIES} ${Boost_LIBRARIES})
+
 #add_executable(torque_sensor2_subscriber_node src/torque_sensor2_subscriber.cpp)
 #target_link_libraries(torque_sensor2_subscriber_node ${catkin_LIBRARIES} ${Boost_LIBRARIES})

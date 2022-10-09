@@ -11,6 +11,12 @@
   <!-- The semantic description that corresponds to the URDF -->
   <param name="$(arg robot_description)_semantic" textfile="$(find smm_ros_gazebo_moveit_pkg)/config/smm_ros_gazebo.srdf" />
 
+  <!-- [7/10/22] Trying to implement Pilz Industrial Motion Planner -> [8/10/22] Deprecated: Too many bugs! -->
+  <!-- <node name="planning_task_space_ind" pkg="smm_ros_gazebo_moveit_pkg" type="planning_task_space_ind"> -->
+  <!--   <param name="/planning_plugin" value="pilz_industrial_motion_planner::CommandPlanner"/> -->
+  <!--   <rosparam command="load" file="$(find smm_ros_gazebo_moveit_pkg)/config/ompl_planning.yaml"> --> 
+  <!-- </node> -->
+
   <!-- Load updated joint limits (override information from URDF) -->
   <group ns="$(arg robot_description)_planning">
     <rosparam command="load" file="$(find smm_ros_gazebo_moveit_pkg)/config/joint_limits.yaml"/>
@@ -20,7 +26,6 @@
   <!-- Load default settings for kinematics; these settings are overridden by settings in a node's namespace -->
   <group ns="$(arg robot_description)_kinematics">
     <rosparam command="load" file="$(find smm_ros_gazebo_moveit_pkg)/config/kinematics.yaml"/>
-
   </group>
 
 </launch>

@@ -39,9 +39,11 @@
 
   <arg name="load_robot_description" default="false" />
   <!-- load URDF, SRDF and joint_limits configuration -->
-  <include file="$(dirname)/planning_context.launch">
+  
+  <!-- [7-10-22] Removed. Called from smm_ros_gazebo_moveit_bringup file! -->
+  <!--include file="$(dirname)/planning_context.launch">
     <arg name="load_robot_description" value="$(arg load_robot_description)" />
-  </include>
+  </include -->
 
   <!-- Planning Pipelines -->
   <group ns="move_group/planning_pipelines">
@@ -85,6 +87,7 @@
     <!-- Set the display variable, in case OpenGL code is used internally -->
     <env name="DISPLAY" value="$(optenv DISPLAY :0)" />
 
+    <!--<param name="planning_plugin" value="pilz_industrial_motion_planner::CommandPlanner" /> --> <!-- [25/9/22] Try to implement Pilz Industrial -->
     <param name="allow_trajectory_execution" value="$(arg allow_trajectory_execution)"/>
     <param name="sense_for_plan/max_safe_path_cost" value="$(arg max_safe_path_cost)"/>
     <param name="default_planning_pipeline" value="$(arg pipeline)" />

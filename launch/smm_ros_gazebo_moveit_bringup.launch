@@ -12,6 +12,8 @@
 		<arg name="gui" value="$(arg gazebo_gui)"/>
 	</include>
 
+	<arg name="pipeline" default="ompl" />
+	
      <!-- send robot urdf to param server -->
 	<param name="robot_description" textfile="$(find smm_ros_gazebo_pkg)/urdf/smm_ros_gazebo_final.urdf" />
 
