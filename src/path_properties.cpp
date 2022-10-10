@@ -224,29 +224,39 @@ void path_properties::executeJointSpaceSegment(ros::NodeHandle node_handle, int 
     /*
      *  
      */
+    double joint_value_target_temp[] = {1.5708, 1.5708, 1.5708};
 
     std::cout << "[executeJointSpaceSegment] Executing " << path_state_cnt << " segment" << std::endl;
 
-    // Extract the joints' tnames
+    // 1. Extract the joints' names
     const std::vector<std::string>& joint_names = p_joint_model_group->getVariableNames();
 
     // Reads new goal state from Parameter Server
     // Implemented by getConfigSpaceStates in main()
 
     // Sets the current state used for planning (from this state we plan!)
-    p_cur_state_ptr = ptr2group->getCurrentState();
-    // Must add info about what it read from getCurrentState
-    std::vector<double> joint_values;
-    p_cur_state_ptr->copyJointGroupPositions(p_joint_model_group, joint_values);
+    p_cur_state_ptr->update();
+    p_cur_state_ptr->copyJointGroupPositions(p_joint_model_group, p_cur_joint_values);
     ROS_INFO("[INFO] CURRENT JOINT ANGLES: ");
     for (std::size_t i = 0; i < joint_names.size(); ++i)
     {
-        ROS_INFO("Joint %s: %f", joint_names[i].c_str(), joint_values[i]);
+        ROS_INFO("Joint %s: %f", joint_names[i].c_str(), p_cur_joint_values[i]);
     }
+    ptr2group->setStartStateToCurrentState();
+    // setStartState (const robot_state::RobotState &  	start_state)
+    p_cur_state_ptr = ptr2group->getCurrentState();
+    //ptr2group->setStartState(p_cur_state_ptr);
 
-    // Assigns new Joints' Goal Positions
-    goal_joint_values.assign(*(ptr2joints+path_state_cnt),*(ptr2joints+path_state_cnt)+ROBOT_DOF);
+    // Set new target state, by assigning new Joints' Goal Positions
     
+    if (path_state_cnt == 0)
+    {
+        goal_joint_values.assign(*(ptr2joints+path_state_cnt),*(ptr2joints+path_state_cnt)+ROBOT_DOF);
+    }
+    else if (path_state_cnt == 1 )
+    {
+        goal_joint_values.assign(joint_value_target_temp, joint_value_target_temp+ROBOT_DOF);
+    }
     
     p_cur_state_ptr->setJointGroupPositions(p_joint_model_group, goal_joint_values);
     ROS_INFO_STREAM("[INFO] GOAL JOINT ANGLES: ");
@@ -255,7 +265,7 @@ void path_properties::executeJointSpaceSegment(ros::NodeHandle node_handle, int 
         ROS_INFO("Joint %s: %f", joint_names[i].c_str(), goal_joint_values[i]);
         ptr2group->setJointValueTarget(joint_names[i].c_str(), goal_joint_values[i]);
     }
-
+    //
     // Plan new segment path
     ptr2group->setPlanningTime(5.0);
     moveit::planning_interface::MoveGroupInterface::Plan my_plan;
@@ -264,24 +274,63 @@ void path_properties::executeJointSpaceSegment(ros::NodeHandle node_handle, int 
 
     if (success == moveit::planning_interface::MoveItErrorCode::SUCCESS)
     {
+        // Visualize Plan result in Rviz
+        ptr2plan_intf_res->getMessage(*ptr2mot_plan_res);
+        ptr2disp_traj_msg->trajectory_start = ptr2mot_plan_res->trajectory_start;
+        ptr2disp_traj_msg->trajectory.push_back(ptr2mot_plan_res->trajectory);
+        ptr2vis_tools->publishTrajectoryLine(ptr2disp_traj_msg->trajectory.back(), p_joint_model_group);
+        ptr2vis_tools->trigger();
+        ptr2Publisher_Node->publish(*ptr2disp_traj_msg);
+
+        // Set the state in the planning scene to the final state of the last plan
+        p_cur_state_ptr->setJointGroupPositions(p_joint_model_group, ptr2mot_plan_res->trajectory.joint_trajectory.points.back().positions);
+        ptr2plan_scene->setCurrentState(*p_cur_state_ptr.get());
+
+        // Display the goal state
+        ptr2vis_tools->publishRobotState(ptr2plan_scene->getCurrentStateNonConst(), rviz_visual_tools::GREEN);
+        ptr2vis_tools->trigger();
+        ptr2vis_tools->prompt("Press 'next' in the RvizVisualToolsGui window to continue the demo");
+
         // Execute in gazebo simulation
         ptr2group->execute(my_plan);	
-        sleep(5.0);
+        sleep(2.0);
+
+        //bool 	publishTrajectoryPath (const std::vector< moveit::core::RobotStatePtr > &trajectory, const moveit::core::JointModelGroup *jmg, double speed=0.01, bool blocking=false)
+        namespace rvt = rviz_visual_tools;
+        ptr2vis_tools->deleteAllMarkers();
+        ptr2vis_tools->publishText(text_pose, "Joint Space Goal", rvt::WHITE, rvt::XLARGE);
+        ptr2vis_tools->publishTrajectoryLine(my_plan.trajectory_, p_joint_model_group);
+        ptr2vis_tools->trigger();
+        ptr2vis_tools->prompt("Press 'next' in the RvizVisualToolsGui window to continue the demo");  
 
         // If successfull execution, reads and prints current joint state, else aborts...
-        geometry_msgs::PoseStamped robot_current_pose = ptr2group->getCurrentPose("massage_tool_2");
-        _cur_end_effector_p_x = robot_current_pose.pose.position.x;
-        _cur_end_effector_p_y = robot_current_pose.pose.position.y;
-        _cur_end_effector_p_z = robot_current_pose.pose.position.z;
+        /*
+        p_robot_current_pose = ptr2group->getCurrentPose("massage_tool_2");
+        _cur_end_effector_p_x = p_robot_current_pose.pose.position.x;
+        _cur_end_effector_p_y = p_robot_current_pose.pose.position.y;
+        _cur_end_effector_p_z = p_robot_current_pose.pose.position.z;
         ROS_INFO_STREAM("End-effector position X: " << _cur_end_effector_p_x);
         ROS_INFO_STREAM("End-effector position Y: " << _cur_end_effector_p_y);
         ROS_INFO_STREAM("End-effector position Z: " << _cur_end_effector_p_z);
+        */
 
         std::cout << "[executeJointSpaceSegment] Executing " << path_state_cnt << " segment: [SUCCESS] " <<std::endl;
         * custom_error_code = NO_ERROR;
 
         // Set the new current state
-        //p_cur_state_ptr = ptr2group->getCurrentState();
+        p_cur_state_ptr->update();
+        //setStateValues (const std::vector< std::string > &joint_names, const std::vector< double > &joint_values)
+        ROS_INFO_STREAM("[INFO] NEW STATE VALUES: ");
+        p_cur_state_ptr->copyJointGroupPositions(p_joint_model_group,p_cur_joint_values);
+        for (std::size_t i = 0; i < joint_names.size(); ++i)
+        {
+            ROS_INFO("Joint %s: %f", joint_names[i].c_str(), p_cur_joint_values[i]);
+        }    
+
+        // Read the new end-effector pos/rot
+        const Eigen::Isometry3d& end_effector_state = p_cur_state_ptr->getGlobalLinkTransform("massage_tool_2");
+        ROS_INFO_STREAM("Translation: \n" << end_effector_state.translation() << "\n");
+        ROS_INFO_STREAM("Rotation: \n" << end_effector_state.rotation() << "\n");       
     }
     else
     {
